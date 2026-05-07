@@ -6,7 +6,15 @@
     <title>PR Review Dashboard</title>
     <style>
         @media print {
+            body { background: none !important; }
+
             header { display: none !important; }
+
+            /** Don't split a PR card across pages */
+            .pr-card {
+                break-inside: avoid;
+                border: solid 1px #c0c0c0;
+            }
         }
 
         * {
@@ -122,7 +130,7 @@
 
         .pr-list {
             display: grid;
-            gap: 15px;
+            gap: 20px;
         }
 
         .pr-card {
@@ -130,7 +138,7 @@
             padding: 20px;
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 4px solid #0969da;
+            border-left: 8px solid #0969da;
         }
 
         .pr-card.ready {
@@ -292,15 +300,16 @@
         }
 
         .contributor-summary {
-            display: grid;
-            gap: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 15px;
         }
 
         .contributor-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
+            padding: 5px 10px;
             background: #f6f8fa;
             border-radius: 6px;
         }
@@ -391,13 +400,6 @@
 
         const hasConfiguredRepo = typeof dashboardEnv.repository === 'string' && dashboardEnv.repository.trim();
         const hasConfiguredToken = typeof dashboardEnv.githubToken === 'string' && dashboardEnv.githubToken.trim();
-
-        // Hide credential fields when both values are provided by env config.
-        if (hasConfiguredRepo && hasConfiguredToken) {
-            document.getElementById('repo').style.display = 'none';
-            document.getElementById('token').style.display = 'none';
-            document.getElementById('tokenHelp').style.display = 'none';
-        }
 
         // Load token from localStorage first, then fallback to env.local.js
         const savedToken = localStorage.getItem('github_token');
