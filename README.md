@@ -1,9 +1,16 @@
 # pr-review-dashboard
 A simple little one-pager that fetches GitHub PRs and displays them so that it's easy to see who needs to pair up.
 
-## Local environment config
+## Filtering By Team
 
-You can put sensitive or local-only values in `env.local.js`.
+To filter by users, use the ENV file, see below
+
+## Local Environment Config
+
+You can put pre-fill the form data by filling out the `env.local.js`, so on load
+you already have your token and repo auto-filled.
+
+**The `env.local.js` is git ignored, so you don't need to worry about committing it!**
 
 Start by copying `env.example.js` to `env.local.js`, then fill in your real values.
 
