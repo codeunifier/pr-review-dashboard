@@ -42,15 +42,23 @@
 
         .config {
             display: grid;
-            gap: 10px;
+            gap: 15px;
             margin-bottom: 15px;
         }
+
+        .config .input-row > * {
+            display: block;
+        }
+
+        .config label { margin-bottom: 5px; }
 
         .config input {
             padding: 8px 12px;
             border: 1px solid #d1d5da;
             border-radius: 6px;
             font-size: 14px;
+            width: 50%;
+            max-width: 500px;
         }
 
         .config button {
@@ -75,6 +83,8 @@
             display: flex;
             gap: 10px;
         }
+
+        .config label { font-size: 0.75rem; }
 
         .config button:hover {
             background: #2c974b;
@@ -327,19 +337,29 @@
         <header>
             <h1>PR Review Dashboard</h1>
             <div class="config">
-                <input
-                    type="text"
-                    id="repo"
-                    placeholder="Repository (e.g., owner/repo)"
-                >
-                <input
-                    type="password"
-                    id="token"
-                    placeholder="GitHub Personal Access Token (required)"
-                >
-                <div id="tokenHelp" class="help-text">
-                    Create a token at: <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">github.com/settings/tokens/new</a> (needs 'repo' scope)
+                <div class="input-row">
+                    <label for="repo">Repository</label>
+                    <input
+                        type="text"
+                        id="repo"
+                        placeholder="Repository (e.g., janeowner/funrepo)"
+                        required
+                    >
                 </div>
+
+                <div class="input-row">
+                    <label for="token">GitHub Personal Access Token</label>
+                    <input
+                        type="password"
+                        id="token"
+                        placeholder="GitHub Personal Access Token (required)"
+                        required
+                    >
+                    <div id="tokenHelp" class="help-text">
+                        Create a token at: <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">github.com/settings/tokens/new</a> (needs 'repo' scope)
+                    </div>
+                </div>
+
                 <div class="buttons-container">
                     <button id="loadBtn" onclick="loadPRs()">Load PRs</button>
                     <button id="printPdf" onclick="window.print()">Print PDF</button>
