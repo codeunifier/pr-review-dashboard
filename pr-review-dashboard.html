@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Review Dashboard</title>
+    <style>
+        @media print {
+            #header, #footer, #nav { display: none !important; }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f6f8fa;
+            padding: 20px;
+            color: #24292e;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #24292e;
+        }
+
+        .config {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .config input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .config button {
+            padding: 8px 16px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #loadBtn {
+            background: #28a745;
+        }
+
+        #printPdf {
+            background: #0366d6;
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .config button:hover {
+            background: #2c974b;
+        }
+
+        .config button:disabled {
+            background: #94d3a2;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .status.error {
+            background: #ffeef0;
+            border: 1px solid #f85149;
+            color: #d1242f;
+        }
+
+        .status.success {
+            background: #dafbe1;
+            border: 1px solid #2ea44f;
+            color: #1a7f37;
+        }
+
+        .status.info {
+            background: #ddf4ff;
+            border: 1px solid #54aeff;
+            color: #0969da;
+        }
+
+        .pr-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .pr-card {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #0969da;
+        }
+
+        .pr-card.ready {
+            border-left-color: #cf222e;
+        }
+
+        .pr-card.approved {
+            border-left-color: #1a7f37;
+        }
+
+        .pr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .pr-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0969da;
+            text-decoration: none;
+            flex: 1;
+        }
+
+        .pr-title:hover {
+            text-decoration: underline;
+        }
+
+        .pr-number {
+            color: #57606a;
+            margin-left: 8px;
+            font-weight: 400;
+        }
+
+        .pr-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #57606a;
+            margin-bottom: 12px;
+        }
+
+        .pr-creator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #ddf4ff;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .pr-creator img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .pr-section {
+            margin-top: 12px;
+        }
+
+        .pr-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #57606a;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .user-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #f6f8fa;
+            border-radius: 16px;
+            font-size: 13px;
+        }
+
+        .user img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.draft {
+            background: #6e7781;
+            color: white;
+        }
+
+        .badge.ready {
+            background: #cf222e;
+            color: white;
+        }
+
+        .badge.approved {
+            background: #1a7f37;
+            color: white;
+        }
+
+        .badge.changes-requested {
+            background: #d1242f;
+            color: white;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #57606a;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .review-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #57606a;
+            margin-top: 5px;
+        }
+
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .summary h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #24292e;
+        }
+
+        .contributor-summary {
+            display: grid;
+            gap: 12px;
+        }
+
+        .contributor-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f6f8fa;
+            border-radius: 6px;
+        }
+
+        .contributor-item.needs-review {
+            background: #fff5f5;
+            border-left: 3px solid #cf222e;
+        }
+
+        .contributor-item img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .contributor-name {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .contributor-count {
+            font-size: 14px;
+            color: #57606a;
+        }
+
+        .contributor-count.urgent {
+            color: #cf222e;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PR Review Dashboard</h1>
+            <div class="config">
+                <input
+                    type="text"
+                    id="repo"
+                    placeholder="Repository (e.g., owner/repo)"
+                    value="packbackbooks/questions"
+                >
+                <input
+                    type="password"
+                    id="token"
+                    placeholder="GitHub Personal Access Token (required)"
+                >
+                <div id="tokenHelp" class="help-text">
+                    Create a token at: <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank">github.com/settings/tokens/new</a> (needs 'repo' scope)
+                </div>
+                <div class="buttons-container">
+                    <button id="loadBtn" onclick="loadPRs()">Load PRs</button>
+                    <button id="printPdf" onclick="window.print()">Print PDF</button>
+                </div>
+            </div>
+            <div id="status"></div>
+        </header>
+
+        <div id="summary" class="summary" style="display: none;">
+            <h2>Review Summary</h2>
+            <div id="contributorSummary" class="contributor-summary"></div>
+        </div>
+
+        <div id="prList" class="pr-list"></div>
+    </div>
+
+    <script src="./env.local.js"></script>
+    <script>
+        const dashboardEnv = window.PR_DASHBOARD_ENV || {};
+
+        // Allowed PR authors can be configured in env.local.js.
+        const ALLOWED_AUTHORS = Array.isArray(dashboardEnv.allowedAuthors)
+            ? dashboardEnv.allowedAuthors.filter(author => typeof author === 'string' && author.trim())
+            : [];
+
+        if (typeof dashboardEnv.repository === 'string' && dashboardEnv.repository.trim()) {
+            document.getElementById('repo').value = dashboardEnv.repository.trim();
+        }
+
+        const hasConfiguredRepo = typeof dashboardEnv.repository === 'string' && dashboardEnv.repository.trim();
+        const hasConfiguredToken = typeof dashboardEnv.githubToken === 'string' && dashboardEnv.githubToken.trim();
+
+        // Hide credential fields when both values are provided by env config.
+        if (hasConfiguredRepo && hasConfiguredToken) {
+            document.getElementById('repo').style.display = 'none';
+            document.getElementById('token').style.display = 'none';
+            document.getElementById('tokenHelp').style.display = 'none';
+        }
+
+        // Load token from localStorage first, then fallback to env.local.js
+        const savedToken = localStorage.getItem('github_token');
+        const configuredToken = typeof dashboardEnv.githubToken === 'string' ? dashboardEnv.githubToken.trim() : '';
+        const initialToken = savedToken || configuredToken;
+        if (initialToken) {
+            document.getElementById('token').value = initialToken;
+        }
+
+        async function loadPRs() {
+            const repo = document.getElementById('repo').value;
+            const token = document.getElementById('token').value;
+            const statusDiv = document.getElementById('status');
+            const prListDiv = document.getElementById('prList');
+            const loadBtn = document.getElementById('loadBtn');
+
+            if (!token) {
+                statusDiv.innerHTML = '<div class="status error">Please enter a GitHub token</div>';
+                return;
+            }
+
+            if (!repo) {
+                statusDiv.innerHTML = '<div class="status error">Please enter a repository</div>';
+                return;
+            }
+
+            // Save token to localStorage
+            localStorage.setItem('github_token', token);
+
+            loadBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="status info">Loading PRs...</div>';
+            prListDiv.innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+
+            try {
+                // Fetch open PRs
+                const response = await fetch(`https://api.github.com/repos/${repo}/pulls?state=open&per_page=100`, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+                }
+
+                const prs = await response.json();
+
+                // Filter by allowed authors if configured. Always exclude drafts.
+                const filteredPRs = ALLOWED_AUTHORS.length > 0
+                    ? prs.filter(pr => ALLOWED_AUTHORS.includes(pr.user.login) && !pr.draft)
+                    : prs.filter(pr => !pr.draft);
+
+                // Fetch review status for each PR
+                const prsWithReviews = await Promise.all(filteredPRs.map(async (pr) => {
+                    const reviewsResponse = await fetch(pr.url + '/reviews', {
+                        headers: {
+                            'Authorization': `token ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    const reviews = await reviewsResponse.json();
+
+                    return { ...pr, reviews };
+                }));
+
+                // Generate summary by contributor
+                renderSummary(prsWithReviews);
+
+                const scopeText = ALLOWED_AUTHORS.length > 0 ? 'from allowed authors' : 'from all authors';
+                statusDiv.innerHTML = `<div class="status success">Found ${prsWithReviews.length} PRs ${scopeText} (${prs.length} total open)</div>`;
+
+                if (prsWithReviews.length === 0) {
+                    const emptyMessage = ALLOWED_AUTHORS.length > 0
+                        ? 'No PRs from allowed authors.'
+                        : 'No non-draft PRs found.';
+                    prListDiv.innerHTML = `<div class="empty">${emptyMessage}</div>`;
+                } else {
+                    prListDiv.innerHTML = prsWithReviews.map(pr => renderPR(pr)).join('');
+                }
+
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            } finally {
+                loadBtn.disabled = false;
+            }
+        }
+
+        function getLatestReviews(reviews) {
+            // Get the latest review state from each reviewer
+            const reviewsByUser = {};
+            reviews.forEach(review => {
+                if (review.state !== 'COMMENTED') {
+                    reviewsByUser[review.user.login] = review.state;
+                }
+            });
+            return reviewsByUser;
+        }
+
+        function getLastReviewDate(reviews) {
+            if (!reviews || reviews.length === 0) return null;
+
+            // Find the most recent review
+            const sortedReviews = reviews.sort((a, b) =>
+                new Date(b.submitted_at) - new Date(a.submitted_at)
+            );
+
+            return sortedReviews[0].submitted_at;
+        }
+
+        function getReviewStatus(pr) {
+            const latestReviews = getLatestReviews(pr.reviews);
+            const states = Object.values(latestReviews);
+
+            if (states.some(s => s === 'CHANGES_REQUESTED')) {
+                return { status: 'changes-requested', text: 'Changes Requested' };
+            }
+            if (states.some(s => s === 'APPROVED')) {
+                return { status: 'approved', text: 'Approved' };
+            }
+            return { status: 'ready', text: 'Awaiting Review' };
+        }
+
+        function renderPR(pr) {
+            const reviewStatus = getReviewStatus(pr);
+            const latestReviews = getLatestReviews(pr.reviews);
+
+            return `
+                <div class="pr-card ${reviewStatus.status}">
+                    <div class="pr-header">
+                        <div>
+                            <a href="${pr.html_url}" target="_blank" class="pr-title">
+                                ${escapeHtml(pr.title)}
+                                <span class="pr-number">#${pr.number}</span>
+                            </a>
+                            <span class="badge ${reviewStatus.status}">${reviewStatus.text}</span>
+                        </div>
+                    </div>
+
+                    <div class="pr-creator">
+                        <img src="${pr.user.avatar_url}" alt="${pr.user.login}">
+                        <strong>${pr.user.login}</strong> opened this PR
+                    </div>
+
+                    <div class="pr-meta">
+                        <span>Created: ${formatDate(pr.created_at)}</span>
+                        ${pr.reviews && pr.reviews.length > 0 ? `<span>Last review: ${formatDate(getLastReviewDate(pr.reviews))}</span>` : '<span>No reviews yet</span>'}
+                        <span>${pr.base.ref} ← ${pr.head.ref}</span>
+                    </div>
+
+                    ${pr.assignees.length > 0 ? `
+                        <div class="pr-section">
+                            <div class="pr-section-title">Assignees</div>
+                            <div class="user-list">
+                                ${pr.assignees.map(user => `
+                                    <div class="user">
+                                        <img src="${user.avatar_url}" alt="${user.login}">
+                                        ${user.login}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${Object.keys(latestReviews).length > 0 ? `
+                        <div class="pr-section">
+                            <div class="pr-section-title">Reviews</div>
+                            <div class="user-list">
+                                ${Object.entries(latestReviews).map(([login, state]) => {
+                                    const reviewer = pr.reviews.find(r => r.user.login === login).user;
+                                    const stateText = state === 'APPROVED' ? '✓ Approved' :
+                                                     state === 'CHANGES_REQUESTED' ? '✗ Changes Requested' :
+                                                     state;
+                                    return `
+                                        <div class="user">
+                                            <img src="${reviewer.avatar_url}" alt="${login}">
+                                            ${login}: ${stateText}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderSummary(prs) {
+            const summaryDiv = document.getElementById('summary');
+            const contributorSummaryDiv = document.getElementById('contributorSummary');
+
+            if (prs.length === 0) {
+                summaryDiv.style.display = 'none';
+                return;
+            }
+
+            // Group PRs by author and count those needing review
+            const contributorStats = {};
+
+            prs.forEach(pr => {
+                const author = pr.user.login;
+                if (!contributorStats[author]) {
+                    contributorStats[author] = {
+                        avatar: pr.user.avatar_url,
+                        total: 0,
+                        needsReview: 0
+                    };
+                }
+
+                contributorStats[author].total++;
+
+                // Check if PR needs review (not approved)
+                const latestReviews = getLatestReviews(pr.reviews);
+                const hasApproval = Object.values(latestReviews).some(state => state === 'APPROVED');
+
+                if (!hasApproval) {
+                    contributorStats[author].needsReview++;
+                }
+            });
+
+            // Render the summary
+            contributorSummaryDiv.innerHTML = Object.entries(contributorStats)
+                .sort((a, b) => b[1].needsReview - a[1].needsReview)
+                .map(([login, stats]) => {
+                    const needsReview = stats.needsReview > 0;
+                    const countText = stats.needsReview > 0
+                        ? `${stats.needsReview} pair-up${stats.needsReview > 1 ? 's' : ''} needed`
+                        : 'All PRs approved';
+
+                    return `
+                        <div class="contributor-item ${needsReview ? 'needs-review' : ''}">
+                            <img src="${stats.avatar}" alt="${login}">
+                            <div class="contributor-name">${login}</div>
+                            <div class="contributor-count ${needsReview ? 'urgent' : ''}">
+                                ${countText}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            summaryDiv.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+
+            // Reset time to midnight for accurate day comparison
+            const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            const diffMs = nowOnly - dateOnly;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Auto-load if token is present
+        if (initialToken) {
+            loadPRs();
+        }
+    </script>
+</body>
+</html>
