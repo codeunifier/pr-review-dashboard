@@ -357,6 +357,16 @@
                 </div>
 
                 <div class="input-row">
+                    <label for="authors">Authors (comma-separated)</label>
+                    <input
+                        type="text"
+                        id="authors"
+                        placeholder="e.g., alice,bob,charlie"
+                    >
+                    <div class="help-text">Leave blank to include all authors.</div>
+                </div>
+
+                <div class="input-row">
                     <label for="token">GitHub Personal Access Token</label>
                     <input
                         type="password"
@@ -389,11 +399,6 @@
     <script>
         const dashboardEnv = window.PR_DASHBOARD_ENV || {};
 
-        // Allowed PR authors can be configured in env.local.js.
-        const ALLOWED_AUTHORS = Array.isArray(dashboardEnv.allowedAuthors)
-            ? dashboardEnv.allowedAuthors.filter(author => typeof author === 'string' && author.trim())
-            : [];
-
         if (typeof dashboardEnv.repository === 'string' && dashboardEnv.repository.trim()) {
             document.getElementById('repo').value = dashboardEnv.repository.trim();
         }
@@ -409,9 +414,23 @@
             document.getElementById('token').value = initialToken;
         }
 
+        const savedAuthors = localStorage.getItem('allowed_authors');
+        if (savedAuthors) {
+            document.getElementById('authors').value = savedAuthors;
+        }
+
+        function parseAuthorsInput(inputValue) {
+            return inputValue
+                .split(',')
+                .map(author => author.trim())
+                .filter(Boolean);
+        }
+
         async function loadPRs() {
             const repo = document.getElementById('repo').value;
             const token = document.getElementById('token').value;
+            const authorsInput = document.getElementById('authors').value;
+            const allowedAuthors = parseAuthorsInput(authorsInput);
             const statusDiv = document.getElementById('status');
             const prListDiv = document.getElementById('prList');
             const loadBtn = document.getElementById('loadBtn');
@@ -428,6 +447,7 @@
 
             // Save token to localStorage
             localStorage.setItem('github_token', token);
+            localStorage.setItem('allowed_authors', authorsInput);
 
             loadBtn.disabled = true;
             statusDiv.innerHTML = '<div class="status info">Loading PRs...</div>';
@@ -450,8 +470,8 @@
                 const prs = await response.json();
 
                 // Filter by allowed authors if configured. Always exclude drafts.
-                const filteredPRs = ALLOWED_AUTHORS.length > 0
-                    ? prs.filter(pr => ALLOWED_AUTHORS.includes(pr.user.login) && !pr.draft)
+                const filteredPRs = allowedAuthors.length > 0
+                    ? prs.filter(pr => allowedAuthors.includes(pr.user.login) && !pr.draft)
                     : prs.filter(pr => !pr.draft);
 
                 // Fetch review status for each PR
@@ -467,19 +487,22 @@
                     return { ...pr, reviews };
                 }));
 
+                // Keep only PRs that still need attention (exclude currently approved PRs).
+                const pendingReviewPRs = prsWithReviews.filter(pr => getReviewStatus(pr).status !== 'approved');
+
                 // Generate summary by contributor
-                renderSummary(prsWithReviews);
+                renderSummary(pendingReviewPRs);
 
-                const scopeText = ALLOWED_AUTHORS.length > 0 ? 'from allowed authors' : 'from all authors';
-                statusDiv.innerHTML = `<div class="status success">Found ${prsWithReviews.length} PRs ${scopeText} (${prs.length} total open)</div>`;
+                const scopeText = allowedAuthors.length > 0 ? 'from selected authors' : 'from all authors';
+                statusDiv.innerHTML = `<div class="status success">Found ${pendingReviewPRs.length} PRs needing review ${scopeText} (${prs.length} total open)</div>`;
 
-                if (prsWithReviews.length === 0) {
-                    const emptyMessage = ALLOWED_AUTHORS.length > 0
-                        ? 'No PRs from allowed authors.'
-                        : 'No non-draft PRs found.';
+                if (pendingReviewPRs.length === 0) {
+                    const emptyMessage = allowedAuthors.length > 0
+                        ? 'No pending PRs from selected authors.'
+                        : 'No non-draft PRs currently need review.';
                     prListDiv.innerHTML = `<div class="empty">${emptyMessage}</div>`;
                 } else {
-                    prListDiv.innerHTML = prsWithReviews.map(pr => renderPR(pr)).join('');
+                    prListDiv.innerHTML = pendingReviewPRs.map(pr => renderPR(pr)).join('');
                 }
 
             } catch (error) {
